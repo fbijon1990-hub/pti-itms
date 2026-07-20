@@ -107,7 +107,8 @@ export type AssessmentScore = {
 export type Evaluation = {
   id: string;
   training_id: string;
-  participant_id: string;
+  participant_id: string | null;
+  respondent_name: string | null;
   content: number | null;
   facilitation: number | null;
   materials: number | null;
@@ -151,4 +152,42 @@ export type Notification = {
   subject: string | null;
   sent_on: string | null;
   status: string | null;
+};
+
+// ---- Custom evaluation forms (Google-Forms style) ----
+
+export type QuestionType = "rating" | "text" | "paragraph" | "choice";
+
+export type EvaluationForm = {
+  id: string;
+  training_id: string | null;
+  title: string;
+  description: string | null;
+  is_open: boolean;
+  created_at: string;
+};
+
+export type EvaluationQuestion = {
+  id: string;
+  form_id: string;
+  prompt: string;
+  type: QuestionType;
+  options: string[];
+  required: boolean;
+  sort: number;
+};
+
+export type EvaluationResponse = {
+  id: string;
+  form_id: string;
+  respondent_name: string | null;
+  submitted_at: string;
+};
+
+export type EvaluationAnswer = {
+  id: string;
+  response_id: string;
+  question_id: string;
+  rating: number | null;
+  answer_text: string | null;
 };
