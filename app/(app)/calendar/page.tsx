@@ -11,6 +11,8 @@ export default async function CalendarPage({
   searchParams: { edit?: string; new?: string };
 }) {
   const trainings = await getTrainings();
+  const { createClient } = await import("@/lib/supabase/server");
+  const { data: budgets } = await createClient().from("budgets").select("id, title");
   const editing = searchParams.edit ? trainings.find((t) => t.id === searchParams.edit) : null;
   const showForm = !!searchParams.new || !!editing;
 
@@ -62,6 +64,15 @@ export default async function CalendarPage({
             <div>
               <label className="label">Venue</label>
               <input name="venue" className="field" defaultValue={editing?.venue ?? ""} />
+            </div>
+            <div>
+              <label className="label">Budget</label>
+              <select name="budget_id" className="field" defaultValue={editing?.budget_id ?? ""}>
+                <option value="">None</option>
+                {(budgets ?? []).map((b) => (
+                  <option key={b.id} value={b.id}>{b.title}</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

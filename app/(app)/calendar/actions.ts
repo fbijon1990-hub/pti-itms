@@ -23,6 +23,7 @@ export async function saveTraining(formData: FormData) {
     end_date: end || null,
     status: String(formData.get("status") || "Planned"),
     capacity: Number(formData.get("capacity") || 20),
+    budget_id: String(formData.get("budget_id") || "") || null,
     days: daysBetween(start, end),
     objectives: String(formData.get("objectives") || "")
   };

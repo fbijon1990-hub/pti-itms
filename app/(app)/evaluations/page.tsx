@@ -1,11 +1,13 @@
 import { PageHeader, Card, StatCard } from "@/components/ui";
-import { getTrainings, trainingMetrics } from "@/lib/queries";
+import { getTrainings, trainingMetrics, getParticipants } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
-import { getParticipants } from "@/lib/queries";
+import { saveEvaluation, deleteEvaluation } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function EvaluationsPage({ searchParams }: { searchParams: { t?: string } }) {
+const DIMS = ["content", "facilitation", "materials", "logistics", "overall"] as const;
+
+export default async function EvaluationsPage({ searchParams }: { searchParams: { t?: string; new?: string } }) {
   const trainings = await getTrainings();
   const active = searchParams.t || trainings.find((t) => t.status === "Completed")?.id || trainings[0]?.id;
 
@@ -13,15 +15,25 @@ export default async function EvaluationsPage({ searchParams }: { searchParams: 
   const participants = await getParticipants();
   const pMap = new Map(participants.map((p) => [p.id, p.name]));
 
-  const [metrics, { data: evals }] = await Promise.all([
+  const [metrics, { data: evals }, { data: approved }] = await Promise.all([
     active ? trainingMetrics(active) : Promise.resolve(null),
-    sb.from("evaluations").select("*").eq("training_id", active)
+    sb.from("evaluations").select("*").eq("training_id", active),
+    sb.from("nominations").select("participant_id").eq("training_id", active).eq("status", "Approved")
   ]);
   const e = metrics?.evaluation;
+  const enrolled = (approved ?? []).map((a) => a.participant_id);
 
   return (
     <div>
-      <PageHeader title="Participant Evaluations" subtitle="End-of-programme feedback (1-5 scale)" />
+      <PageHeader
+        title="Participant Evaluations"
+        subtitle="End-of-programme feedback (1-5 scale)"
+        action={
+          searchParams.new
+            ? <a href={`/evaluations?t=${active}`} className="btn-ghost">Close</a>
+            : <a href={`/evaluations?t=${active}&new=1`} className="btn-primary">+ Add evaluation</a>
+        }
+      />
       <div className="flex gap-2 flex-wrap mb-4">
         {trainings.map((t) => (
           <a key={t.id} href={`/evaluations?t=${t.id}`}
@@ -30,6 +42,37 @@ export default async function EvaluationsPage({ searchParams }: { searchParams: 
           </a>
         ))}
       </div>
+
+      {searchParams.new && (
+        <Card className="mb-6">
+          <h2 className="h-serif text-lg font-bold text-green-ink mb-3">New evaluation</h2>
+          <form action={saveEvaluation} className="space-y-4">
+            <input type="hidden" name="training_id" value={active} />
+            <div className="grid md:grid-cols-6 gap-3">
+              <div className="md:col-span-1">
+                <label className="label">Participant</label>
+                <select name="participant_id" required className="field">
+                  <option value="">Select...</option>
+                  {enrolled.map((pid) => <option key={pid} value={pid}>{pMap.get(pid) ?? pid}</option>)}
+                </select>
+              </div>
+              {DIMS.map((d) => (
+                <div key={d}>
+                  <label className="label">{d}</label>
+                  <select name={d} required className="field" defaultValue="5">
+                    {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className="label">Comment</label>
+              <input name="comment" className="field" placeholder="Optional" />
+            </div>
+            <button className="btn-primary">Save evaluation</button>
+          </form>
+        </Card>
+      )}
 
       {e ? (
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
@@ -46,14 +89,27 @@ export default async function EvaluationsPage({ searchParams }: { searchParams: 
 
       {evals && evals.length > 0 && (
         <Card>
-          <h2 className="h-serif text-lg font-bold text-green-ink mb-3">Comments</h2>
-          <ul className="space-y-2 text-sm">
-            {evals.filter((v) => v.comment).map((v) => (
-              <li key={v.id} className="border-l-2 border-gold pl-3">
-                <span className="text-muted text-xs">{pMap.get(v.participant_id) ?? "Participant"}:</span> {v.comment}
-              </li>
-            ))}
-          </ul>
+          <h2 className="h-serif text-lg font-bold text-green-ink mb-3">Responses</h2>
+          <table className="ledger">
+            <thead>
+              <tr><th>Participant</th>{DIMS.map((d) => <th key={d} className="text-center capitalize">{d.slice(0,4)}</th>)}<th>Comment</th><th></th></tr>
+            </thead>
+            <tbody>
+              {evals.map((v) => (
+                <tr key={v.id}>
+                  <td className="font-medium">{pMap.get(v.participant_id) ?? "Participant"}</td>
+                  {DIMS.map((d) => <td key={d} className="text-center mono">{(v as any)[d]}</td>)}
+                  <td className="text-xs text-muted">{v.comment}</td>
+                  <td className="text-right">
+                    <form action={deleteEvaluation} className="inline">
+                      <input type="hidden" name="id" value={v.id} />
+                      <button className="text-bad underline text-xs">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </Card>
       )}
     </div>
