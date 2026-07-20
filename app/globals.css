@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --green-ink: #0c2a1f;
+  --green: #16483a;
+  --gold: #a67c22;
+  --paper: #f2f5f1;
+  --border: #dbe2dc;
+}
+
+html, body {
+  background: var(--paper);
+  color: #1b2620;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border rounded shadow-card;
+  }
+  .card-pad { @apply p-5; }
+
+  .h-serif { font-family: Georgia, "Times New Roman", serif; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-medium
+           border border-transparent transition-colors cursor-pointer;
+  }
+  .btn-primary { @apply btn bg-green text-white hover:bg-green-ink; }
+  .btn-ghost { @apply btn bg-transparent text-green border-border-strong hover:bg-green-soft; }
+  .btn-danger { @apply btn bg-bad text-white hover:opacity-90; }
+
+  .field {
+    @apply w-full rounded border border-border-strong bg-white px-3 py-2 text-sm
+           outline-none focus:border-green focus:ring-2 focus:ring-green-soft;
+  }
+  .label { @apply block text-xs font-semibold text-muted mb-1 uppercase tracking-wide; }
+
+  .ledger { @apply w-full text-sm border-collapse; }
+  .ledger th {
+    @apply text-left font-semibold text-muted text-xs uppercase tracking-wide
+           px-3 py-2 border-b border-border bg-green-soft/40;
+  }
+  .ledger td { @apply px-3 py-2 border-b border-border align-top; }
+  .ledger tr:hover td { @apply bg-green-soft/20; }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-ok { @apply badge bg-ok-soft text-ok; }
+  .badge-warn { @apply badge bg-warn-soft text-warn; }
+  .badge-bad { @apply badge bg-bad-soft text-bad; }
+  .badge-info { @apply badge bg-info-soft text-info; }
+
+  .stat-num { @apply text-3xl font-bold text-green-ink h-serif; }
+  .stat-label { @apply text-xs uppercase tracking-wide text-muted font-semibold; }
+
+  .page-title { @apply text-2xl font-bold text-green-ink h-serif; }
+  .mono { font-family: ui-monospace, "Cascadia Code", "Consolas", monospace; }
+}
